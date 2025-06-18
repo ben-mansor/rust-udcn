@@ -1,0 +1,18 @@
+[package]
+name = "rust-udcn-ebpf"
+version = "0.1.0"
+edition = "2021"
+description = "eBPF kernel components for µDCN"
+
+[dependencies]
+aya-bpf = { version = "0.11", features = ["macros"] }
+aya-log-ebpf = "0.1"
+rust-udcn-common = { path = "../rust-udcn-common" }
+memoffset = "0.9"
+
+[lib]
+path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = []

@@ -1,0 +1,52 @@
+[package]
+name = "rust-udcn"
+version = "0.1.0"
+edition = "2021" # Using 2021 edition for better compatibility
+description = "A pure-Rust µDCN (micro Data-Centric Networking) implementation"
+authors = ["µDCN Team"]
+
+[workspace]
+members = [
+    "rust-udcn-common",
+    "rust-udcn-ebpf",
+    "rust-udcn-xdp",
+    "rust-udcn-quic",
+    "rust-udcn-cli",
+]
+
+[dependencies]
+rust-udcn-common = { path = "./rust-udcn-common" }
+rust-udcn-ebpf = { path = "./rust-udcn-ebpf" }
+rust-udcn-quic = { path = "./rust-udcn-quic" }
+aya = { version = "0.12", features = ["async_tokio"] }
+aya-log = "0.1"
+clap = { version = "4.4", features = ["derive"] }
+env_logger = "0.10"
+log = "0.4"
+anyhow = "1.0"
+tokio = { version = "1.32", features = ["full"] }
+tracing = "0.1"
+tracing-subscriber = "0.3"
+quinn = "0.10" # QUIC implementation
+bytes = "1.4" # For efficient byte handling
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+config = "0.13"
+
+[dev-dependencies]
+criterion = "0.5" # For benchmarking
+
+[profile.dev]
+opt-level = 0
+debug = true
+
+[profile.release]
+opt-level = 3
+debug = false
+lto = true
+codegen-units = 1
+panic = "abort"
+
+[[bin]]
+name = "udcn"
+path = "src/main.rs"

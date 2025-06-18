@@ -1,0 +1,26 @@
+[package]
+name = "rust-udcn-cli"
+version = "0.1.0"
+edition = "2021"
+description = "Command-line interface for the µDCN system"
+license = "MIT"
+
+[dependencies]
+anyhow = "1.0"
+bytes = "1.0"
+clap = { version = "4.0", features = ["derive"] }
+env_logger = "0.9"
+futures = "0.3"
+log = "0.4"
+tokio = { version = "1.0", features = ["full"] }
+rcgen = "0.11"
+
+# Internal crates
+rust-udcn-common = { path = "../rust-udcn-common" }
+rust-udcn-xdp = { path = "../rust-udcn-xdp" }
+rust-udcn-quic = { path = "../rust-udcn-quic" }
+
+[dev-dependencies]
+assert_cmd = "2.0"
+predicates = "2.0"
+tempfile = "3.0"

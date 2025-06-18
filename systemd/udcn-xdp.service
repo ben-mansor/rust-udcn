@@ -1,0 +1,26 @@
+[Unit]
+Description=µDCN XDP Forwarder
+After=network.target
+Documentation=https://github.com/yourusername/rust-udcn
+
+[Service]
+Type=simple
+User=root
+ExecStartPre=/bin/mkdir -p /var/log/udcn
+ExecStart=/usr/local/bin/udcn xdp load --interface eth0
+ExecStop=/usr/local/bin/udcn xdp unload --interface eth0
+Restart=on-failure
+RestartSec=5s
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=udcn-xdp
+
+# Security hardening
+ProtectSystem=strict
+ReadWritePaths=/var/log/udcn /sys/fs/bpf
+CapabilityBoundingSet=CAP_SYS_ADMIN CAP_NET_ADMIN CAP_BPF
+AmbientCapabilities=CAP_SYS_ADMIN CAP_NET_ADMIN CAP_BPF
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
