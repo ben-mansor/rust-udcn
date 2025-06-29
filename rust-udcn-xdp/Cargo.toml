@@ -3,6 +3,7 @@ name = "rust-udcn-xdp"
 version = "0.1.0"
 edition = "2021"
 description = "XDP userspace components for µDCN"
+build = "build.rs"
 
 [dependencies]
 aya = { version = "0.13.1", features = ["async_tokio"] }
