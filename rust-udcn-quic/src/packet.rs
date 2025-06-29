@@ -4,7 +4,7 @@
 //! for transmission over QUIC.
 
 use anyhow::{anyhow, Result};
-use bytes::{Buf, BufMut, Bytes, BytesMut};
+use bytes::{Bytes, BytesMut};
 use log::{debug, trace};
 use rust_udcn_common::ndn::{Data, Interest};
 
@@ -17,7 +17,7 @@ const PACKET_TYPE_DATA: u8 = 0x06;
 pub enum NdnPacket {
     /// An Interest packet
     Interest(Interest),
-    
+
     /// A Data packet
     Data(Data),
 }
@@ -28,7 +28,7 @@ impl NdnPacket {
         if bytes.is_empty() {
             return Err(anyhow!("Empty packet"));
         }
-        
+
         // The first byte indicates the packet type in NDN-TLV
         match bytes[0] {
             PACKET_TYPE_INTEREST => {
@@ -74,7 +74,7 @@ impl NdnPacket {
             NdnPacket::Data(_) => "Data",
         }
     }
-    
+
     /// Get the size of the packet in bytes
     pub fn size(&self) -> Result<usize> {
         Ok(self.to_bytes()?.len())
