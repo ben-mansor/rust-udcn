@@ -152,7 +152,7 @@ impl Face {
                     
                     Err(anyhow!("Interest timed out"))
                 }
-                Ok(InterestResult::NetworkError(err)) => {
+                Ok(InterestResult::Dropped(err)) => {
                     debug!("[Face {}] Network error for Interest {}: {}", self.id, name, err);
                     Err(anyhow!("Network error: {}", err))
                 }
@@ -219,7 +219,7 @@ impl Face {
         // Notify all pending interests
         let mut pending = self.pending_interests.lock().await;
         for (name, sender) in pending.drain() {
-            let _ = sender.send(InterestResult::NetworkError("Face closed".to_string()));
+            let _ = sender.send(InterestResult::Dropped("Face closed".to_string()));
         }
         
         // Send a closed event
@@ -301,7 +301,7 @@ impl Face {
                 // Notify all pending interests
                 let mut pending = pending_interests.lock().await;
                 for (name, sender) in pending.drain() {
-                    let _ = sender.send(InterestResult::NetworkError("Connection closed".to_string()));
+                    let _ = sender.send(InterestResult::Dropped("Connection closed".to_string()));
                 }
                 
                 // Send a closed event
