@@ -1,7 +1,7 @@
 //! Packet parsing utilities for the NDN-XDP program.
 
 use core::mem;
-use aya_bpf::{
+use aya_ebpf::{
     bindings::xdp_action,
     programs::XdpContext,
 };
