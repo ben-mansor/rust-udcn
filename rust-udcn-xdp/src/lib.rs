@@ -57,15 +57,10 @@ impl XdpManager {
     /// Load the XDP program from the given path or use the embedded program
     pub async fn load_from_embedded() -> Result<Self> {
         // This will include the eBPF object file at compile time
-        #[cfg(debug_assertions)]
-        let mut bpf = Bpf::load(include_bytes_aligned!(
-            "../../target/bpfel-unknown-none/debug/rust_udcn_ebpf"
-        ))?;
-
-        #[cfg(not(debug_assertions))]
-        let mut bpf = Bpf::load(include_bytes_aligned!(
-            "../../target/bpfel-unknown-none/release/rust_udcn_ebpf"
-        ))?;
+        // The eBPF object compiled by the build script is placed in OUT_DIR
+        let mut bpf = Bpf::load(include_bytes_aligned!(concat!(
+            env!("OUT_DIR"), "/rust_udcn_ebpf.o"
+        )))?;
 
         // Initialize logging for the BPF program
         if let Err(e) = BpfLogger::init(&mut bpf) {
