@@ -3,7 +3,7 @@
 //! This module handles operations for the Pending Interest Table,
 //! which tracks Interest packets that are waiting for matching Data.
 
-use aya_bpf::maps::LruHashMap;
+use aya_ebpf::maps::LruHashMap;
 
 use crate::maps::{PitKey, PitValue};
 use crate::utils;
@@ -18,7 +18,7 @@ extern "C" {
     static mut PIT_TABLE: LruHashMap<PitKey, PitValue>;
     
     #[link_name = "METRICS"]
-    static mut METRICS: aya_bpf::maps::HashMap<u32, u64>;
+    static mut METRICS: aya_ebpf::maps::HashMap<u32, u64>;
 }
 
 /// Clean up expired PIT entries.
