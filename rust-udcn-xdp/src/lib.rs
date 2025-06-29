@@ -7,7 +7,7 @@ use anyhow::{Context, Result};
 use aya::{
     include_bytes_aligned,
     maps::{HashMap, MapData, lru_hash_map::LruHashMap},
-    programs::{Xdp, XdpFlags},
+    programs::{Xdp, XdpFlags, XdpLinkId},
     Bpf,
 };
 use aya_log::BpfLogger;
@@ -49,8 +49,8 @@ pub struct XdpManager {
     /// The CS (Content Store)
     cs: Arc<ContentStore>,
     
-    /// List of attached network interfaces
-    attached_interfaces: Vec<String>,
+    /// List of attached network interfaces and their link IDs
+    attached_interfaces: Vec<(String, XdpLinkId)>,
 }
 
 impl XdpManager {
@@ -124,15 +124,18 @@ impl XdpManager {
         // Load the program into the kernel
         program.load()?;
         
-        // Attach it to the interface
-        program.attach(interface_name, XdpFlags::default())
+        // Attach it to the interface and keep the link ID
+        let link_id = program
+            .attach(interface_name, XdpFlags::default())
             .context(format!("Failed to attach to interface {}", interface_name))?;
         
         // Store the program instance
         self.program = Some(program.clone());
         
-        // Add the interface to our list
-        self.attached_interfaces.push(interface_name.to_string());
+        // Add the interface to our list with its link ID
+        self
+            .attached_interfaces
+            .push((interface_name.to_string(), link_id));
         
         info!("XDP program attached to interface {}", interface_name);
         
@@ -142,14 +145,13 @@ impl XdpManager {
     /// Detach the XDP program from all interfaces
     pub fn detach_all(&mut self) -> Result<()> {
         if let Some(prog) = self.program.as_mut() {
-            for interface in &self.attached_interfaces {
-                if let Err(e) = prog.detach(interface) {
+            for (interface, link_id) in self.attached_interfaces.drain(..) {
+                if let Err(e) = prog.detach(link_id) {
                     warn!("Failed to detach from interface {}: {}", interface, e);
                 } else {
                     info!("Detached XDP program from interface {}", interface);
                 }
             }
-            self.attached_interfaces.clear();
         }
         Ok(())
     }
@@ -184,9 +186,12 @@ impl XdpManager {
         Arc::clone(&self.cs)
     }
     
-    /// Get a list of attached interfaces
-    pub fn attached_interfaces(&self) -> &[String] {
-        &self.attached_interfaces
+    /// Get a list of attached interface names
+    pub fn attached_interfaces(&self) -> Vec<String> {
+        self.attached_interfaces
+            .iter()
+            .map(|(name, _)| name.clone())
+            .collect()
     }
     
     /// Check if the program is attached to any interface
