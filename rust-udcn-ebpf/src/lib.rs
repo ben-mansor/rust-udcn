@@ -31,16 +31,16 @@ const MAX_CS_ENTRIES: usize = 4096;
 
 // Create eBPF maps
 #[map(name = "PIT_TABLE")]
-static mut PIT_TABLE: LruHashMap<maps::PitKey, maps::PitValue> = 
-    LruHashMap::<maps::PitKey, maps::PitValue>::with_max_entries(MAX_PIT_ENTRIES, 0);
+static mut PIT_TABLE: LruHashMap<maps::PitKey, maps::PitValue> =
+    LruHashMap::<maps::PitKey, maps::PitValue>::with_max_entries(MAX_PIT_ENTRIES as u32, 0);
 
 #[map(name = "FIB_TABLE")]
-static mut FIB_TABLE: HashMap<maps::FibKey, maps::FibValue> = 
-    HashMap::<maps::FibKey, maps::FibValue>::with_max_entries(MAX_FIB_ENTRIES, 0);
+static mut FIB_TABLE: HashMap<maps::FibKey, maps::FibValue> =
+    HashMap::<maps::FibKey, maps::FibValue>::with_max_entries(MAX_FIB_ENTRIES as u32, 0);
 
 #[map(name = "CS_TABLE")]
-static mut CS_TABLE: LruHashMap<maps::CsKey, maps::CsValue> = 
-    LruHashMap::<maps::CsKey, maps::CsValue>::with_max_entries(MAX_CS_ENTRIES, 0);
+static mut CS_TABLE: LruHashMap<maps::CsKey, maps::CsValue> =
+    LruHashMap::<maps::CsKey, maps::CsValue>::with_max_entries(MAX_CS_ENTRIES as u32, 0);
 
 #[map(name = "METRICS")]
 static mut METRICS: HashMap<u32, u64> = HashMap::<u32, u64>::with_max_entries(32, 0);
@@ -68,12 +68,10 @@ fn try_ndn_xdp(ctx: XdpContext) -> Result<u32, ()> {
     // Check if this is a NDN packet and what type it is
     match parser::parse_ndn_packet(&packet) {
         Ok(ndn::PacketType::Interest) => {
-            // Process Interest packet
-            process_interest(ctx, packet)
+            process_interest(&ctx, packet)
         }
         Ok(ndn::PacketType::Data) => {
-            // Process Data packet
-            process_data(ctx, packet)
+            process_data(&ctx, packet)
         }
         _ => {
             // Not an NDN packet or not a supported type, pass it up the stack
@@ -83,7 +81,7 @@ fn try_ndn_xdp(ctx: XdpContext) -> Result<u32, ()> {
 }
 
 /// Process an Interest packet
-fn process_interest(ctx: XdpContext, packet: parser::Packet) -> Result<u32, ()> {
+fn process_interest(ctx: &XdpContext, packet: parser::Packet) -> Result<u32, ()> {
     unsafe {
         // Increment interest counter
         let counter = METRICS.get_ptr_mut(&1).ok_or(())?;
@@ -175,7 +173,7 @@ fn process_interest(ctx: XdpContext, packet: parser::Packet) -> Result<u32, ()> 
 }
 
 /// Process a Data packet
-fn process_data(ctx: XdpContext, packet: parser::Packet) -> Result<u32, ()> {
+fn process_data(ctx: &XdpContext, packet: parser::Packet) -> Result<u32, ()> {
     unsafe {
         // Increment data counter
         let counter = METRICS.get_ptr_mut(&2).ok_or(())?;
@@ -219,4 +217,9 @@ fn process_data(ctx: XdpContext, packet: parser::Packet) -> Result<u32, ()> {
 
     // Pass to userspace for full processing
     Ok(xdp_action::XDP_PASS)
+}
+
+#[panic_handler]
+fn panic(_info: &core::panic::PanicInfo) -> ! {
+    loop {}
 }

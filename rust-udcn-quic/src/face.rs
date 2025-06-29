@@ -6,7 +6,7 @@ use anyhow::{anyhow, Context, Result};
 use bytes::{Bytes, BytesMut};
 use futures::{SinkExt, StreamExt};
 use log::{debug, error, info, trace, warn};
-use quinn::{Connection, ConnectionError, RecvStream, SendStream};
+use quinn::{Connection, ConnectionError, RecvStream, SendStream, StreamId};
 use rust_udcn_common::{
     ndn::{Data, Interest, InterestResult, Name},
     metrics::UdcnMetrics,
@@ -256,15 +256,15 @@ impl Face {
                 debug!("[Face {}] Accepted bi-directional stream {}", id, stream_id);
                 
                 // Process this stream
-                let stream_closed = Arc::clone(&closed);
+                let _stream_closed = Arc::clone(&closed);
                 let stream_pending_interests = Arc::clone(&pending_interests);
                 let stream_event_sender = Arc::clone(&event_sender);
                 let stream_metrics = Arc::clone(&metrics);
-                let stream_id_clone = id.clone();
+                let face_id_clone = id.clone();
                 
                 tokio::spawn(async move {
                     if let Err(e) = process_stream(
-                        stream_id_clone,
+                        face_id_clone.clone(),
                         stream_id,
                         send,
                         recv,
@@ -272,7 +272,7 @@ impl Face {
                         stream_event_sender,
                         stream_metrics,
                     ).await {
-                        warn!("[Face {}] Error processing stream {}: {}", id, stream_id, e);
+                        warn!("[Face {}] Error processing stream {}: {}", face_id_clone, stream_id, e);
                     }
                 });
             }
@@ -359,20 +359,20 @@ impl Face {
 /// Process a QUIC stream
 async fn process_stream(
     face_id: String,
-    stream_id: u64,
-    mut send: SendStream,
+    stream_id: StreamId,
+    _send: SendStream,
     mut recv: RecvStream,
     pending_interests: Arc<Mutex<HashMap<String, oneshot::Sender<InterestResult>>>>,
     event_sender: Arc<Mutex<mpsc::Sender<FaceEvent>>>,
     metrics: Arc<UdcnMetrics>,
 ) -> Result<()> {
-    let mut buffer = BytesMut::with_capacity(8192);
+    let _buffer = BytesMut::with_capacity(8192);
     let mut fragments = VecDeque::new();
     
     // Read from the stream
     while let Some(chunk) = recv.read_chunk(1024, false).await? {
         // Update metrics
-        metrics.bytes_received.add(chunk.len() as u64);
+        metrics.bytes_received.add(chunk.bytes.len() as u64);
         
         // Add to our fragments
         fragments.push_back(chunk.bytes);
