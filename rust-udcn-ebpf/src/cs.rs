@@ -3,7 +3,7 @@
 //! This module handles operations for the Content Store,
 //! which caches Data packets to satisfy future matching Interests.
 
-use aya_bpf::maps::LruHashMap;
+use aya_ebpf::maps::LruHashMap;
 
 use crate::maps::{CsKey, CsValue};
 use crate::maps::metrics;
@@ -15,7 +15,7 @@ extern "C" {
     static mut CS_TABLE: LruHashMap<CsKey, CsValue>;
     
     #[link_name = "METRICS"]
-    static mut METRICS: aya_bpf::maps::HashMap<u32, u64>;
+    static mut METRICS: aya_ebpf::maps::HashMap<u32, u64>;
 }
 
 /// Check if a Data packet is in the Content Store.
