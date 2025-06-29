@@ -92,6 +92,29 @@ pub fn add_pit_entry(key: &PitKey, value: &PitValue) -> Result<(), ()> {
     Ok(())
 }
 
+/// Convenience wrapper for adding a PIT entry.
+///
+/// This function exists for compatibility with older code that expected
+/// `add_entry` to be available.  It simply forwards to [`add_pit_entry`].
+pub fn add_entry(key: &PitKey, value: &PitValue) -> Result<(), ()> {
+    add_pit_entry(key, value)
+}
+
+/// Check if a given PIT key already exists.
+///
+/// This is used to detect duplicate Interests.
+pub fn has_duplicate(key: &PitKey) -> bool {
+    unsafe { PIT_TABLE.get(key).is_some() }
+}
+
+/// Wrapper for [`find_matching_interests`].
+///
+/// Returns `true` if a Data packet with the provided name hash matches
+/// an Interest in the PIT.
+pub fn has_matching_interest(name_hash: u32) -> Result<bool, ()> {
+    find_matching_interests(name_hash)
+}
+
 /// Get the face ID for a PIT entry.
 ///
 /// Given a PIT key, return the face ID from the corresponding value.
