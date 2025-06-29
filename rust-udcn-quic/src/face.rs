@@ -6,7 +6,7 @@ use anyhow::{anyhow, Context, Result};
 use bytes::{Bytes, BytesMut};
 use futures::{SinkExt, StreamExt};
 use log::{debug, error, info, trace, warn};
-use quinn::{Connection, RecvStream, SendStream};
+use quinn::{Connection, ConnectionError, RecvStream, SendStream};
 use rust_udcn_common::{
     ndn::{Data, Interest, InterestResult, Name},
     metrics::UdcnMetrics,
@@ -246,7 +246,7 @@ impl Face {
             debug!("[Face {}] Starting to process incoming streams", id);
             
             // Process incoming bi-directional streams
-            while let Ok(Some((send, recv))) = connection.accept_bi().await {
+            while let Ok((send, recv)) = connection.accept_bi().await {
                 // Check if we're closed
                 if *closed.lock().await {
                     break;
@@ -278,6 +278,20 @@ impl Face {
             }
             
             debug!("[Face {}] Stopped processing incoming streams", id);
+
+            if let Some(err) = connection.close_reason() {
+                match err {
+                    ConnectionError::ApplicationClosed { .. }
+                    | ConnectionError::ConnectionClosed(_)
+                    | ConnectionError::LocallyClosed
+                    | ConnectionError::TimedOut => {
+                        debug!("[Face {}] Connection closed: {}", id, err);
+                    }
+                    other => {
+                        warn!("[Face {}] Connection error: {}", id, other);
+                    }
+                }
+            }
             
             // Set the closed flag if not already set
             let mut closed_guard = closed.lock().await;
