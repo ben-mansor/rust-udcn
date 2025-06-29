@@ -6,7 +6,7 @@
 use anyhow::{Context, Result};
 use aya::{
     include_bytes_aligned,
-    maps::{HashMap, LruHashMap, MapData},
+    maps::{HashMap, MapData, lru_hash_map::LruHashMap},
     programs::{Xdp, XdpFlags},
     Bpf,
 };
