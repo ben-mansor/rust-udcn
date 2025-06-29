@@ -3,7 +3,7 @@
 //! This module provides helper functions for common operations in eBPF programs
 //! such as pointer manipulation and boundary checking.
 
-use aya_bpf::programs::XdpContext;
+use aya_ebpf::programs::XdpContext;
 
 /// Get a pointer to a type T at a given offset in the packet data.
 ///
