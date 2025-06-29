@@ -40,6 +40,7 @@ criterion = "0.5" # For benchmarking
 [profile.dev]
 opt-level = 0
 debug = true
+panic = "abort"
 
 [profile.release]
 opt-level = 3
@@ -47,4 +48,5 @@ debug = false
 lto = true
 codegen-units = 1
 panic = "abort"
+
 

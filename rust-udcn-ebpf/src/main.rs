@@ -233,7 +233,3 @@ fn try_ndn_xdp(ctx: XdpContext) -> Result<u32, ()> {
     }
 }
 
-#[panic_handler]
-fn panic(_info: &core::panic::PanicInfo) -> ! {
-    loop {}
-}

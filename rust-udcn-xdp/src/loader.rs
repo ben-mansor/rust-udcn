@@ -4,7 +4,7 @@
 
 use anyhow::{Context, Result};
 use aya::{
-    programs::{Xdp, XdpFlags},
+    programs::{xdp::XdpLinkId, Xdp, XdpFlags},
     Bpf,
 };
 use log::{debug, error, info, warn};
@@ -61,14 +61,14 @@ pub fn load_bpf_object<P: AsRef<Path>>(path: P) -> Result<Bpf> {
 }
 
 /// Load the XDP program from a BPF object
-pub fn load_xdp_program(bpf: &mut Bpf, program_name: &str) -> Result<Xdp> {
+pub fn load_xdp_program<'a>(bpf: &'a mut Bpf, program_name: &str) -> Result<&'a mut Xdp> {
     debug!("Loading XDP program: {}", program_name);
     
     let program = bpf
         .program_mut(program_name)
-        .context(format!("Failed to find program '{}'", program_name))?
+            .context(format!("Failed to find program '{}'", program_name))?
         .try_into()
-        .context(format!("Failed to convert program '{}' to XDP", program_name))?;
+            .context(format!("Failed to convert program '{}' to XDP", program_name))?;
     
     info!("Successfully loaded XDP program: {}", program_name);
     
@@ -80,27 +80,27 @@ pub fn attach_xdp_to_interface(
     program: &mut Xdp,
     interface: &str,
     flags: XdpAttachFlags,
-) -> Result<()> {
+) -> Result<XdpLinkId> {
     debug!("Attaching XDP program to interface: {}", interface);
     
-    program
+    let link_id = program
         .attach(interface, flags.to_aya_flags())
         .context(format!("Failed to attach to interface: {}", interface))?;
     
     info!("Successfully attached XDP program to interface: {}", interface);
     
-    Ok(())
+    Ok(link_id)
 }
 
 /// Detach an XDP program from an interface
-pub fn detach_xdp_from_interface(program: &mut Xdp, interface: &str) -> Result<()> {
-    debug!("Detaching XDP program from interface: {}", interface);
+pub fn detach_xdp_from_interface(program: &mut Xdp, link_id: XdpLinkId) -> Result<()> {
+    debug!("Detaching XDP program");
     
     program
-        .detach(interface)
-        .context(format!("Failed to detach from interface: {}", interface))?;
+        .detach(link_id)
+        .context("Failed to detach XDP program")?;
     
-    info!("Successfully detached XDP program from interface: {}", interface);
+    info!("Successfully detached XDP program");
     
     Ok(())
 }

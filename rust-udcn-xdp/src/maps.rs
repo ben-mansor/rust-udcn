@@ -5,7 +5,7 @@
 
 use anyhow::{Context, Result};
 use aya::{
-    maps::{HashMap, LruHashMap, MapData, MapRef},
+    maps::{HashMap, MapData, MapError},
     Bpf,
 };
 use log::{debug, info, warn};
@@ -32,16 +32,16 @@ const METRIC_PIT_MATCHES: u32 = 8;
 
 /// Wrapper for accessing the PIT (Pending Interest Table) from userspace
 pub struct PendingInterestTable {
-    /// The underlying eBPF LRU hash map
-    map: Arc<RwLock<LruHashMap<MapData, PitKey, PitValue>>>,
+    /// The underlying eBPF hash map
+    map: Arc<RwLock<HashMap<MapData, PitKey, PitValue>>>,
 }
 
 impl PendingInterestTable {
     /// Create a new PIT wrapper from a BPF object
     pub fn new(bpf: &mut Bpf) -> Result<Self> {
-        let map = bpf.map_mut(PIT_TABLE_NAME)
+        let map = bpf.take_map(PIT_TABLE_NAME)
             .context(format!("Failed to find map '{}'", PIT_TABLE_NAME))?;
-        
+
         let map = map.try_into()?;
         
         Ok(Self {
@@ -116,9 +116,9 @@ pub struct Fib {
 impl Fib {
     /// Create a new FIB wrapper from a BPF object
     pub fn new(bpf: &mut Bpf) -> Result<Self> {
-        let map = bpf.map_mut(FIB_TABLE_NAME)
+        let map = bpf.take_map(FIB_TABLE_NAME)
             .context(format!("Failed to find map '{}'", FIB_TABLE_NAME))?;
-        
+
         let map = map.try_into()?;
         
         Ok(Self {
@@ -178,7 +178,11 @@ impl Fib {
         };
         
         let map = self.map.read().await;
-        Ok(map.get(&key, 0)?)
+        match map.get(&key, 0) {
+            Ok(value) => Ok(Some(value)),
+            Err(MapError::KeyNotFound) => Ok(None),
+            Err(e) => Err(e.into()),
+        }
     }
 
     /// Get all entries in the FIB
@@ -209,16 +213,16 @@ impl Fib {
 
 /// Wrapper for accessing the CS (Content Store) from userspace
 pub struct ContentStore {
-    /// The underlying eBPF LRU hash map
-    map: Arc<RwLock<LruHashMap<MapData, CsKey, CsValue>>>,
+    /// The underlying eBPF hash map
+    map: Arc<RwLock<HashMap<MapData, CsKey, CsValue>>>,
 }
 
 impl ContentStore {
     /// Create a new CS wrapper from a BPF object
     pub fn new(bpf: &mut Bpf) -> Result<Self> {
-        let map = bpf.map_mut(CS_TABLE_NAME)
+        let map = bpf.take_map(CS_TABLE_NAME)
             .context(format!("Failed to find map '{}'", CS_TABLE_NAME))?;
-        
+
         let map = map.try_into()?;
         
         Ok(Self {
@@ -260,8 +264,8 @@ impl ContentStore {
         // Get the metrics map to read the hit/miss counters
         let metrics = bpf.map(METRICS_MAP_NAME)
             .context(format!("Failed to find map '{}'", METRICS_MAP_NAME))?;
-            
-        let metrics: HashMap<MapData, u32, u64> = metrics.try_into()?;
+
+        let metrics: HashMap<_, u32, u64> = HashMap::try_from(metrics)?;
         
         let hits = metrics.get(&METRIC_CS_HITS, 0).unwrap_or(0);
         let misses = metrics.get(&METRIC_INTERESTS_RECEIVED, 0).unwrap_or(0).saturating_sub(hits);
@@ -277,8 +281,8 @@ impl ContentStore {
     pub async fn get_stats(&self, bpf: &Bpf) -> Result<ContentStoreStats> {
         let metrics = bpf.map(METRICS_MAP_NAME)
             .context(format!("Failed to find map '{}'", METRICS_MAP_NAME))?;
-            
-        let metrics: HashMap<MapData, u32, u64> = metrics.try_into()?;
+
+        let metrics: HashMap<_, u32, u64> = HashMap::try_from(metrics)?;
         
         let hits = metrics.get(&METRIC_CS_HITS, 0).unwrap_or(0);
         let inserts = metrics.get(&METRIC_CS_INSERTS, 0).unwrap_or(0);

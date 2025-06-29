@@ -5,6 +5,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::fmt;
+use aya::Pod;
 use std::net::Ipv6Addr;
 
 /// Interface identifier type used for identifying network interfaces.
@@ -177,3 +178,13 @@ pub struct CsValue {
     /// TTL in milliseconds
     pub ttl_ms: u32,
 }
+
+unsafe impl Pod for ForwardInfo {}
+unsafe impl Pod for PitKey {}
+unsafe impl Pod for PitValue {}
+unsafe impl Pod for FibKey {}
+unsafe impl Pod for FibValue {}
+unsafe impl Pod for CsKey {}
+unsafe impl Pod for CsValue {}
+unsafe impl Pod for PitId {}
+unsafe impl Pod for FaceId {}

@@ -45,6 +45,14 @@ impl Default for Counter {
     }
 }
 
+impl Clone for Counter {
+    fn clone(&self) -> Self {
+        let c = Counter::new();
+        c.value.store(self.value.load(Ordering::Relaxed), Ordering::Relaxed);
+        c
+    }
+}
+
 /* ---------------------------------------------------------------- *
  * Gauge
  * ---------------------------------------------------------------- */
@@ -81,6 +89,31 @@ impl Gauge {
 impl Default for Gauge {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl Clone for Histogram {
+    fn clone(&self) -> Self {
+        Self {
+            buckets: self
+                .buckets
+                .iter()
+                .map(|b| AtomicU64::new(b.load(Ordering::Relaxed)))
+                .collect(),
+            boundaries: self.boundaries.clone(),
+            underflow: AtomicU64::new(self.underflow.load(Ordering::Relaxed)),
+            overflow: AtomicU64::new(self.overflow.load(Ordering::Relaxed)),
+            sum: AtomicU64::new(self.sum.load(Ordering::Relaxed)),
+            count: AtomicU64::new(self.count.load(Ordering::Relaxed)),
+        }
+    }
+}
+
+impl Clone for Gauge {
+    fn clone(&self) -> Self {
+        let g = Gauge::new();
+        g.value.store(self.value.load(Ordering::Relaxed), Ordering::Relaxed);
+        g
     }
 }
 
@@ -227,11 +260,20 @@ impl Default for Timer {
     }
 }
 
+impl Clone for Timer {
+    fn clone(&self) -> Self {
+        Self {
+            start: None,
+            histogram: self.histogram.clone(),
+        }
+    }
+}
+
 /* ---------------------------------------------------------------- *
  * Aggregate metrics for µDCN
  * ---------------------------------------------------------------- */
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct UdcnMetrics {
     // Packet processing metrics
     pub interests_received: Counter,
