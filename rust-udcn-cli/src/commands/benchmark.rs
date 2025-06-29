@@ -86,7 +86,8 @@ pub async fn run_benchmark(count: usize, prefix: String, concurrent: usize) -> R
             for i in start_index..end_index {
                 // Create a unique name for this interest
                 let name_str = format!("{}/{}", prefix_clone, i);
-                let name = Name::from_string(&name_str).unwrap();
+                let name = Name::from_string(&name_str)
+                    .expect("failed to parse benchmark name");
 
                 // Create an interest
                 let mut interest = Interest::new(name);
