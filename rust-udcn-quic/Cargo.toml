@@ -10,7 +10,7 @@ rust-udcn-common = { path = "../rust-udcn-common" }
 
 # -------- QUIC stack (API used by the code) ------------------------
 # quinn 0.10   ⇐⇒   rustls 0.20   ⇐⇒   webpki-roots 0.22
-quinn           = { version = "=0.10", default-features = false, features = ["rustls"] }
+quinn           = { version = "=0.9", default-features = false, features = ["rustls"] }
 rustls          = { version = "=0.20", features = ["dangerous_configuration", "quic"] }
 webpki-roots    = "0.22"
 rustls-pemfile  = "1"        # you call certs()/pkcs8_private_keys() directly
