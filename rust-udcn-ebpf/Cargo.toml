@@ -5,8 +5,8 @@ edition = "2021"
 description = "eBPF kernel components for µDCN"
 
 [dependencies]
-aya-bpf = { version = "0.11", features = ["macros"] }
-aya-log-ebpf = "0.1"
+aya-ebpf = { version = "0.1.1", features = ["macros"] }
+aya-log-ebpf = "0.1.1"
 rust-udcn-common = { path = "../rust-udcn-common" }
 memoffset = "0.9"
 
