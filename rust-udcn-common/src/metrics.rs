@@ -237,6 +237,8 @@ pub struct UdcnMetrics {
     pub interests_received: Counter,
     pub interests_satisfied: Counter,
     pub interests_timed_out: Counter,
+    /// Number of Interests sent out
+    pub interests_sent: Counter,
     pub interests_forwarded: Counter,
     pub data_received: Counter,
     pub data_sent: Counter,

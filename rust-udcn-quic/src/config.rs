@@ -3,11 +3,11 @@
 //! This module provides configuration options for QUIC servers and clients.
 
 use anyhow::{Context, Result};
-use quinn::{ClientConfig, ServerConfig, VarInt};
+use quinn::{ClientConfig, ServerConfig, TransportConfig, VarInt};
 use rustls::{Certificate, PrivateKey};
 use std::{
     fs::File,
-    io::{BufReader, Read},
+    io::{BufReader, Read, Seek},
     path::{Path, PathBuf},
     sync::Arc,
     time::Duration,
@@ -84,16 +84,20 @@ pub async fn configure_server(options: &ServerOptions) -> Result<ServerConfig> {
     let key = read_private_key(&options.key_path)?;
     
     // Create server configuration
-    let mut server_config = ServerConfig::with_single_cert(vec![cert], key)
-        .context("Failed to create server config with certificate")?;
+    let mut server_crypto = rustls::ServerConfig::builder()
+        .with_safe_defaults()
+        .with_no_client_auth()
+        .with_single_cert(vec![cert], key)?;
+    server_crypto.alpn_protocols = vec![NDN_QUIC_ALPN.to_vec()];
+
+    let mut server_config = ServerConfig::with_crypto(Arc::new(server_crypto));
     
     // Configure the transport parameters
-    let transport_config = Arc::get_mut(&mut server_config.transport)
-        .context("Failed to get mutable transport config")?;
+    let mut transport_config = TransportConfig::default();
     
     // Set idle timeout
     if let Some(idle_timeout_ms) = options.idle_timeout_ms {
-        transport_config.max_idle_timeout(Some(VarInt::from_u32(idle_timeout_ms as u32)));
+        transport_config.max_idle_timeout(Some(VarInt::from_u32(idle_timeout_ms as u32).into()));
     }
     
     // Set keep alive interval
@@ -101,17 +105,12 @@ pub async fn configure_server(options: &ServerOptions) -> Result<ServerConfig> {
         transport_config.keep_alive_interval(Some(Duration::from_millis(keep_alive_ms)));
     }
     
-    // Configure the server
-    let server_config_mut = Arc::get_mut(&mut server_config.transport)
-        .context("Failed to get mutable server config")?;
-    
-    // Set ALPN protocols
-    server_config.alpn_protocols = vec![NDN_QUIC_ALPN.to_vec()];
-    
-    // Set maximum connections
     if let Some(max_connections) = options.max_connections {
-        server_config_mut.max_concurrent_uni_streams(VarInt::from_u32(max_connections));
+        transport_config.max_concurrent_uni_streams(VarInt::from_u32(max_connections));
     }
+
+    server_config.transport_config(Arc::new(transport_config));
+
     
     Ok(server_config)
 }
@@ -119,20 +118,19 @@ pub async fn configure_server(options: &ServerOptions) -> Result<ServerConfig> {
 /// Configure a QUIC client
 pub async fn configure_client(options: &ClientOptions) -> Result<ClientConfig> {
     // Create client crypto configuration
+    let mut root_store = rustls::RootCertStore::empty();
     let mut client_crypto = rustls::ClientConfig::builder()
         .with_safe_defaults()
-        .with_native_roots()
+        .with_root_certificates(root_store.clone())
         .with_no_client_auth();
     
     // Add custom CA certificate if specified
     if let Some(ca_path) = &options.ca_cert_path {
         let ca_cert = read_certificate(ca_path)?;
-        let mut cert_store = rustls::RootCertStore::empty();
-        cert_store.add(&ca_cert)?;
-        
+        root_store.add(&ca_cert)?;
         client_crypto = rustls::ClientConfig::builder()
             .with_safe_defaults()
-            .with_root_certificates(cert_store)
+            .with_root_certificates(root_store.clone())
             .with_no_client_auth();
     }
     
@@ -155,21 +153,20 @@ pub async fn configure_client(options: &ClientOptions) -> Result<ClientConfig> {
     
     // Create QUIC client configuration
     let mut client_config = ClientConfig::new(Arc::new(client_crypto));
-    
-    // Configure the transport parameters
-    let transport_config = Arc::get_mut(&mut client_config.transport)
-        .context("Failed to get mutable transport config")?;
+
+    let mut transport_config = TransportConfig::default();
     
     // Set idle timeout
     if let Some(idle_timeout_ms) = options.idle_timeout_ms {
-        transport_config.max_idle_timeout(Some(VarInt::from_u32(idle_timeout_ms as u32)));
+        transport_config.max_idle_timeout(Some(VarInt::from_u32(idle_timeout_ms as u32).into()));
     }
     
     // Set keep alive interval
     if let Some(keep_alive_ms) = options.keep_alive_interval_ms {
         transport_config.keep_alive_interval(Some(Duration::from_millis(keep_alive_ms)));
     }
-    
+    client_config.transport_config(Arc::new(transport_config));
+
     Ok(client_config)
 }
 

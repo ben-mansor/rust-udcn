@@ -84,7 +84,7 @@ impl NdnQuicServer {
         let server_config = config::configure_server(&options).await?;
         
         // Create a QUIC endpoint
-        let (endpoint, _incoming) = Endpoint::server(
+        let endpoint = Endpoint::server(
             server_config.clone(),
             options.listen_addr.parse().context("Invalid listen address")?,
         )?;

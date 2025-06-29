@@ -472,8 +472,10 @@ impl Data {
 
 #[derive(Debug, Clone)]
 pub enum InterestResult {
-    Forwarded,
-    SatisfiedByCs(Data),
-    Aggregated,
+    /// The Interest was satisfied with Data
+    Data(Data),
+    /// The Interest timed out
+    Timeout,
+    /// The Interest could not be satisfied and was dropped with a reason
     Dropped(String),
 }
