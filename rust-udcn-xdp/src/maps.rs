@@ -5,7 +5,7 @@
 
 use anyhow::{Context, Result};
 use aya::{
-    maps::{HashMap, LruHashMap, MapData, MapRef},
+    maps::{HashMap, LruHashMap, MapData, MapRef, MapError},
     Bpf,
 };
 use log::{debug, info, warn};
@@ -52,7 +52,11 @@ impl PendingInterestTable {
     /// Get a PIT entry by key
     pub async fn get(&self, key: &PitKey) -> Result<Option<PitValue>> {
         let map = self.map.read().await;
-        Ok(map.get(key, 0)?)
+        match map.get(key, 0) {
+            Ok(v) => Ok(Some(v)),
+            Err(MapError::KeyNotFound) => Ok(None),
+            Err(e) => Err(e.into()),
+        }
     }
 
     /// Insert a PIT entry
@@ -90,8 +94,10 @@ impl PendingInterestTable {
                         nonce: nonce as u32,
                     };
                     
-                    if let Ok(Some(value)) = map.get(&key, 0) {
-                        entries.push((key, value));
+                    match map.get(&key, 0) {
+                        Ok(v) => entries.push((key, v)),
+                        Err(MapError::KeyNotFound) => (),
+                        Err(e) => return Err(e.into()),
                     }
                 }
             }
@@ -229,7 +235,11 @@ impl ContentStore {
     /// Get a CS entry by key
     pub async fn get(&self, key: &CsKey) -> Result<Option<CsValue>> {
         let map = self.map.read().await;
-        Ok(map.get(key, 0)?)
+        match map.get(key, 0) {
+            Ok(v) => Ok(Some(v)),
+            Err(MapError::KeyNotFound) => Ok(None),
+            Err(e) => Err(e.into()),
+        }
     }
 
     /// Insert a CS entry
