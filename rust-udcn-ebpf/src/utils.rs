@@ -4,6 +4,7 @@
 //! such as pointer manipulation and boundary checking.
 
 use aya_ebpf::programs::XdpContext;
+use aya_ebpf as aya_bpf;
 
 /// Get a pointer to a type T at a given offset in the packet data.
 ///
@@ -83,13 +84,8 @@ pub fn check_bounds(ctx: &XdpContext, start: usize, len: usize) -> Result<(), ()
 /// monotonic clock value from bpf_ktime_get_ns() divided by 1_000_000.
 #[inline]
 pub fn get_timestamp() -> u64 {
-    unsafe {
-        // bpf_ktime_get_ns() / 1_000_000 to get milliseconds
-        let ns = core::arch::asm!("r0 = ktime_get_ns()", out("r0") _, options(nostack, nomem));
-        let ns: u64;
-        core::arch::asm!("", out("r0") ns, options(pure, nomem, nostack));
-        ns / 1_000_000
-    }
+    // Safety: bpf_ktime_get_ns is always safe to call in eBPF programs
+    unsafe { aya_bpf::helpers::bpf_ktime_get_ns() / 1_000_000 }
 }
 
 /// Extract a u16 from two bytes in network byte order (big endian).
