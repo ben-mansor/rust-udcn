@@ -18,7 +18,7 @@ members = [
 rust-udcn-common = { path = "./rust-udcn-common" }
 rust-udcn-ebpf = { path = "./rust-udcn-ebpf" }
 rust-udcn-quic = { path = "./rust-udcn-quic" }
-aya = { version = "0.12", features = ["async_tokio"] }
+aya = { version = "0.13.1", features = ["async_tokio"] }
 aya-log = "0.1"
 clap = { version = "4.4", features = ["derive"] }
 env_logger = "0.10"
