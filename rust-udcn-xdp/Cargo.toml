@@ -5,8 +5,8 @@ edition = "2021"
 description = "XDP userspace components for µDCN"
 
 [dependencies]
-aya = { version = "0.11", features = ["async_tokio"] }
-aya-log = "0.1"
+aya = { version = "0.13.1", features = ["async_tokio"] }
+aya-log = "0.2.1"
 rust-udcn-common = { path = "../rust-udcn-common" }
 rust-udcn-ebpf = { path = "../rust-udcn-ebpf" }
 anyhow = "1.0"
