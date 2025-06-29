@@ -2,7 +2,7 @@
 #![no_main]
 #![allow(nonstandard_style, improper_ctypes)]
 
-use aya_bpf::{
+use aya_ebpf::{
     bindings::xdp_action,
     macros::{map, xdp},
     maps::{HashMap, LruHashMap},
