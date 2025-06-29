@@ -196,9 +196,9 @@ fn read_private_key<P: AsRef<Path>>(path: P) -> Result<PrivateKey> {
     let mut reader = BufReader::new(file);
     
     // Try PKCS8 format first
-    if let Ok(Some(key)) = rustls_pemfile::pkcs8_private_keys(&mut reader) {
-        if !key.is_empty() {
-            return Ok(PrivateKey(key[0].clone()));
+    if let Ok(keys) = rustls_pemfile::pkcs8_private_keys(&mut reader) {
+        if !keys.is_empty() {
+            return Ok(PrivateKey(keys[0].clone()));
         }
     }
     
@@ -206,9 +206,9 @@ fn read_private_key<P: AsRef<Path>>(path: P) -> Result<PrivateKey> {
     reader.seek(std::io::SeekFrom::Start(0))?;
     
     // Try RSA format
-    if let Ok(Some(key)) = rustls_pemfile::rsa_private_keys(&mut reader) {
-        if !key.is_empty() {
-            return Ok(PrivateKey(key[0].clone()));
+    if let Ok(keys) = rustls_pemfile::rsa_private_keys(&mut reader) {
+        if !keys.is_empty() {
+            return Ok(PrivateKey(keys[0].clone()));
         }
     }
     
