@@ -9,7 +9,7 @@ rust-udcn-common = { path = "../rust-udcn-common" }
 quinn = "0.10"
 rustls = { version = "0.21", features = ["dangerous_configuration", "quic"] }
 tokio = { version = "1.32", features = ["full"] }
-bytes = "1.10.1"
+#bytes = "1.10.1"
 anyhow = "1.0"
 log = "0.4"
 thiserror = "1.0"
