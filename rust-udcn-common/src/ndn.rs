@@ -78,13 +78,32 @@ impl Name {
         }
     }
 
-    pub fn from_string(s: &str) -> Self {
-        let components = s
+    pub fn from_string(s: &str) -> Result<Self, Error> {
+        let parts: Vec<&str> = s
             .split('/')
             .filter(|comp| !comp.is_empty())
-            .map(|comp| NameComponent::new(comp.as_bytes().to_vec()))
             .collect();
-        Self { components }
+
+        if parts.len() > MAX_NAME_COMPONENTS {
+            return Err(Error::NdnPacket(format!(
+                "Name has too many components: {} > {}",
+                parts.len(), MAX_NAME_COMPONENTS
+            )));
+        }
+
+        let mut components = Vec::new();
+        for comp in parts {
+            if comp.as_bytes().len() > MAX_NAME_COMPONENT_LENGTH {
+                return Err(Error::NdnPacket(format!(
+                    "Name component too long ({} bytes > {})",
+                    comp.as_bytes().len(),
+                    MAX_NAME_COMPONENT_LENGTH
+                )));
+            }
+            components.push(NameComponent::new(comp.as_bytes().to_vec()));
+        }
+
+        Ok(Self { components })
     }
 
     pub fn push(&mut self, component: NameComponent) -> &mut Self {
