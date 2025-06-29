@@ -3,7 +3,7 @@
 //! This module handles operations for the Forwarding Information Base,
 //! which maps name prefixes to next-hop faces.
 
-use aya_bpf::maps::HashMap;
+use aya_ebpf::maps::HashMap;
 
 use crate::maps::{FibKey, FibValue, FaceId};
 
@@ -13,7 +13,7 @@ extern "C" {
     static mut FIB_TABLE: HashMap<FibKey, FibValue>;
     
     #[link_name = "METRICS"]
-    static mut METRICS: aya_bpf::maps::HashMap<u32, u64>;
+    static mut METRICS: aya_ebpf::maps::HashMap<u32, u64>;
 }
 
 /// Longest prefix match in the FIB.
