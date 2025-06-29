@@ -19,4 +19,4 @@ thiserror = "1.0"
 bytes = { version = "1.10.1", features = ["serde"] } 
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-bytes = "1.10.1"
+#bytes = "1.10.1"
