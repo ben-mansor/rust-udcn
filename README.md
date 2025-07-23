@@ -50,7 +50,7 @@ The project is structured as a Rust workspace with the following crates:
 
 1. **Clone the repository**:
    ```
-   git clone https://github.com/yourusername/rust-udcn.git
+   git clone https://github.com/ben-mansor/rust-udcn.git
    cd rust-udcn
    ```
 
